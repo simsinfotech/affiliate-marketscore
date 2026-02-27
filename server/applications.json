@@ -1,0 +1,38 @@
+[
+  {
+    "id": "mm4jei11z8kyc6",
+    "fullName": "Mahesh",
+    "email": "mahesh@simsinfotech.com",
+    "whatsapp": "8861183261",
+    "providerType": "Signal Provider",
+    "audienceSize": "100-500",
+    "platform": "YouTube",
+    "message": "",
+    "submittedAt": "2026-02-27T06:54:35.461Z",
+    "status": "pending"
+  },
+  {
+    "id": "mm4k4ybzpqm1ne",
+    "fullName": "Mahesh",
+    "email": "shamique@simsinfotech.com",
+    "whatsapp": "8861183261",
+    "providerType": "Signal Provider",
+    "audienceSize": "100-500",
+    "platform": "Instagram",
+    "message": "",
+    "submittedAt": "2026-02-27T07:15:09.647Z",
+    "status": "pending"
+  },
+  {
+    "id": "mm4mqmztzugsg9",
+    "fullName": "Mahesh",
+    "email": "shamique@simsinfotech.com",
+    "whatsapp": "8861183261",
+    "providerType": "Existing IB",
+    "audienceSize": "1000-5000",
+    "platform": "Website",
+    "message": "",
+    "submittedAt": "2026-02-27T08:28:00.617Z",
+    "status": "pending"
+  }
+]
