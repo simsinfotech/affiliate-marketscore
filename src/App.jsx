@@ -258,7 +258,7 @@ export default function App() {
   };
 
   // Replace this URL with your deployed Google Apps Script Web App URL
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKkUcgFZmhscLlUjR3bLBM42RU3ccpz4aQIlkw57prbgbe--fvMgOOnIDneOl4nDg13w/exec";
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbZ3G_7QX-TY2lrni8cOlShR3xHyXz0aueaglREoluKJ6H_EiGT9niA_mKGkgHQSyhLw/exec";
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
