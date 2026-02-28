@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MarketScore — Direct WhatsApp Outreach</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect } = React;
+
+const C = {
+  bg: "#04070D", surface: "#0B1120", card: "#111B2E",
+  border: "#1A2744", accent: "#00E5B0", accentDark: "#00B88E",
+  red: "#FF4757", gold: "#FFB800", blue: "#4A9EFF",
+  purple: "#A855F7",
+  text: "#F0F4F8", textSec: "#8B9DC3", textMuted: "#4A5D80",
+  wa: "#25D366",
+};
+
+const WA_LINK = "https://wa.me/919036317766";
+
+const analytics = {
+  _q: [], _start: Date.now(), _scroll: 0, _n: 0,
+  init() {
+    const p = new URLSearchParams(window.location.search);
+    this._ref = p.get("ref") || "direct";
+    this.track("page_view", { source: "direct_outreach", ref: this._ref });
+    let fired = new Set();
+    window.addEventListener("scroll", () => {
+      const pct = Math.round((window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+      this._scroll = Math.max(this._scroll, pct);
+      [25, 50, 75, 100].forEach(m => { if (pct >= m && !fired.has(m)) { fired.add(m); this.track("scroll", { depth: m }); } });
+    }, { passive: true });
+  },
+  track(e, d = {}) {
+    this._n++;
+    const p = { event: e, t: Math.round((Date.now() - this._start) / 1000), ...d };
+    this._q.push(p);
+    try { if (window.gtag) window.gtag("event", e, { ...d, source: "direct_outreach" }); } catch {}
+    if (window.location.hostname === "localhost") console.log(`[MS-DM] ${e}`, p);
+  },
+};
+
+const INSTRUMENTS = [
+  { sym: "GOLD", emoji: "\u{1F947}", cat: "commodity", price: "2,945.80", chg: "+0.42%", scores: { t: 2, f: 2, s: 1, c: 2 } },
+  { sym: "BTC/USD", emoji: "\u{20BF}", cat: "crypto", price: "97,420", chg: "+2.15%", scores: { t: 2, f: 1, s: 2, c: 1 } },
+  { sym: "EUR/USD", emoji: "\u{1F1EA}\u{1F1FA}", cat: "forex", price: "1.0862", chg: "+0.22%", scores: { t: 1, f: 0, s: 1, c: 1 } },
+  { sym: "NASDAQ", emoji: "\u{1F4C8}", cat: "index", price: "16,142", chg: "+0.60%", scores: { t: 2, f: 2, s: -1, c: 1 } },
+  { sym: "CRUDE", emoji: "\u{1F6E2}\u{FE0F}", cat: "commodity", price: "71.45", chg: "-1.14%", scores: { t: -2, f: -1, s: -1, c: -1 } },
+  { sym: "ETH/USD", emoji: "\u{27E0}", cat: "crypto", price: "3,842", chg: "+1.87%", scores: { t: 2, f: 1, s: 1, c: 1 } },
+  { sym: "GBP/USD", emoji: "\u{1F1EC}\u{1F1E7}", cat: "forex", price: "1.2685", chg: "+0.14%", scores: { t: 1, f: 1, s: 0, c: 1 } },
+  { sym: "SILVER", emoji: "\u{1F948}", cat: "commodity", price: "33.28", chg: "+1.28%", scores: { t: 2, f: 2, s: 0, c: 1 } },
+  { sym: "USD/JPY", emoji: "\u{1F1EF}\u{1F1F5}", cat: "forex", price: "149.85", chg: "-0.28%", scores: { t: -2, f: -1, s: -1, c: -2 } },
+];
+
+const total = (s) => s.t + s.f + s.s + s.c;
+const bias = (s) => s >= 5 ? { l: "Strong Buy", c: "#00FF88" } : s >= 2 ? { l: "Buy", c: C.accent } : s >= -1 ? { l: "Neutral", c: C.textMuted } : s >= -4 ? { l: "Sell", c: C.red } : { l: "Strong Sell", c: "#FF2244" };
+const fc = (v) => v >= 2 ? "#00FF88" : v >= 1 ? C.accent : v === 0 ? C.textMuted : v >= -1 ? C.gold : C.red;
+
+const LiveScorecard = () => {
+  const [sel, setSel] = useState(0);
+  const [filter, setFilter] = useState("all");
+  const filtered = filter === "all" ? INSTRUMENTS : INSTRUMENTS.filter(i => i.cat === filter);
+  const inst = INSTRUMENTS[sel];
+  const s = total(inst.scores);
+  const b = bias(s);
+
+  return (
+    <div style={{
+      background: C.bg, borderRadius: 20, border: `1px solid ${C.border}`,
+      overflow: "hidden", maxWidth: 460, margin: "0 auto",
+      boxShadow: `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${C.accent}06`,
+    }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "8px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`,
+      }}>
+        <span style={{ fontSize: 10, color: C.textMuted }}>9:52 AM</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <img src="marketscore logo.png" alt="M" style={{ width: 28, height: 28, borderRadius: 5, objectFit: "contain" }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: C.accent }}>MarketScore</span>
+        </div>
+        <span style={{ fontSize: 10, color: C.textMuted }}>5G</span>
+      </div>
+
+      <div style={{ display: "flex", gap: 4, padding: "10px 12px", overflowX: "auto" }}>
+        {[{ id: "all", l: "All" }, { id: "forex", l: "Forex" }, { id: "crypto", l: "Crypto" }, { id: "commodity", l: "Commodities" }, { id: "index", l: "Indices" }].map(f => (
+          <div key={f.id} onClick={() => { setFilter(f.id); analytics.track("scorecard_filter", { cat: f.id }); }} style={{
+            padding: "4px 12px", borderRadius: 16, cursor: "pointer", whiteSpace: "nowrap",
+            background: filter === f.id ? `${C.accent}15` : "transparent",
+            border: `1px solid ${filter === f.id ? C.accent + "30" : C.border}`,
+            fontSize: 10, fontWeight: 700, color: filter === f.id ? C.accent : C.textMuted,
+          }}>{f.l}</div>
+        ))}
+      </div>
+
+      <div style={{ height: 200, overflowY: "auto", padding: "0 8px" }}>
+        {filtered.map((inst) => {
+          const sc = total(inst.scores); const bi = bias(sc); const idx = INSTRUMENTS.indexOf(inst);
+          return (
+            <div key={inst.sym} onClick={() => { setSel(idx); analytics.track("scorecard_tap", { sym: inst.sym, score: sc }); }} style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "7px 10px",
+              borderRadius: 10, cursor: "pointer", marginBottom: 2,
+              background: sel === idx ? `${bi.c}08` : "transparent",
+              border: `1px solid ${sel === idx ? bi.c + "20" : "transparent"}`,
+            }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: 15,
+                background: `${bi.c}12`, border: `1px solid ${bi.c}25`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 900, color: bi.c,
+              }}>{sc > 0 ? `+${sc}` : sc}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 10 }}>{inst.emoji}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800 }}>{inst.sym}</span>
+                  <span style={{ fontSize: 7, fontWeight: 800, color: bi.c, marginLeft: 4, background: `${bi.c}12`, padding: "1px 5px", borderRadius: 3 }}>{bi.l}</span>
+                </div>
+                <div style={{ display: "flex", gap: 2, marginTop: 3 }}>
+                  {[inst.scores.t, inst.scores.f, inst.scores.s, inst.scores.c].map((v, j) => (
+                    <div key={j} style={{ width: 14, height: 14, borderRadius: 3, fontSize: 6, fontWeight: 900, background: `${fc(v)}12`, border: `1px solid ${fc(v)}25`, color: fc(v), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {v > 0 ? "\u25B2" : v < 0 ? "\u25BC" : "\u2014"}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, fontWeight: 700 }}>{inst.price}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: inst.chg.startsWith("+") ? C.accent : C.red }}>{inst.chg}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ margin: "6px 8px 8px", borderRadius: 12, padding: 14, background: `${b.c}06`, border: `1px solid ${b.c}15` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 16 }}>{inst.emoji}</span>
+            <span style={{ fontSize: 14, fontWeight: 900 }}>{inst.sym}</span>
+          </div>
+          <div style={{ background: `${b.c}15`, border: `1px solid ${b.c}25`, borderRadius: 6, padding: "3px 10px" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: b.c }}>{s > 0 ? "+" : ""}{s}/8 — {b.l}</span>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
+          {[{ l: "Technical", i: "growth (1).png", v: inst.scores.t }, { l: "Fundamental", i: "bank.png", v: inst.scores.f }, { l: "Sentiment", i: "people.png", v: inst.scores.s }, { l: "COT", i: "institution.png", v: inst.scores.c }].map(f => (
+            <div key={f.l} style={{ background: C.bg, borderRadius: 8, padding: "6px 4px", textAlign: "center", border: `1px solid ${C.border}` }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                <img src={f.i} alt={f.l} style={{ width: 16, height: 16, objectFit: "contain" }} />
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: fc(f.v), marginTop: 2 }}>{f.v > 0 ? `+${f.v}` : f.v}</div>
+              <div style={{ fontSize: 7, color: C.textMuted, fontWeight: 700, marginTop: 1 }}>{f.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StickyWA = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const h = () => setShow(window.scrollY > 400);
+    window.addEventListener("scroll", h);
+    return () => window.removeEventListener("scroll", h);
+  }, []);
+  return (
+    <div className="sticky-wa" style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 95,
+      background: `${C.bg}F0`, backdropFilter: "blur(16px)",
+      borderTop: `1px solid ${C.border}`, padding: "10px 24px",
+      display: "flex", justifyContent: "center", alignItems: "center", gap: 14,
+      flexWrap: "wrap",
+      transform: show ? "translateY(0)" : "translateY(100%)", transition: "transform .3s",
+    }}>
+      <span style={{ fontSize: 13, color: C.textSec, fontWeight: 600 }}>Ready to try it?</span>
+      <a href={WA_LINK} target="_blank" rel="noopener" onClick={() => analytics.track("wa_click", { loc: "sticky" })} style={{
+        background: C.wa, color: "#fff", padding: "10px 24px",
+        borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none",
+        display: "flex", alignItems: "center", gap: 8,
+      }}><img src="whatsapp.png" alt="WhatsApp" style={{ width: 20, height: 20, objectFit: "contain" }} /> Message Us on WhatsApp</a>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════
+// EXIT-INTENT POPUP
+// ═══════════════════════════════════════
+const ExitPopup = ({ show, onClose }) => {
+  if (!show) return null;
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 300,
+      background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: C.surface, borderRadius: 22, padding: "40px 36px", maxWidth: 420, width: "90%",
+        border: `1px solid ${C.wa}25`, position: "relative", textAlign: "center",
+        boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 40px ${C.wa}10`,
+        animation: "fadeUp .4s ease-out",
+      }}>
+        <div onClick={onClose} style={{
+          position: "absolute", top: 14, right: 18, cursor: "pointer",
+          fontSize: 22, color: C.textMuted, fontWeight: 700, lineHeight: 1,
+        }}>&times;</div>
+
+        <div style={{ fontSize: 48, marginBottom: 16 }}>{"\u{1F44B}"}</div>
+        <h3 style={{ fontSize: 22, fontWeight: 900, marginBottom: 10 }}>
+          Wait — don't leave yet!
+        </h3>
+        <p style={{ fontSize: 14, color: C.textSec, lineHeight: 1.7, marginBottom: 8 }}>
+          You're one message away from getting <span style={{ color: C.accent, fontWeight: 700 }}>free AI trade ideas</span>, a 4-factor scorecard, and a private trading community.
+        </p>
+        <p style={{ fontSize: 13, color: C.textMuted, marginBottom: 24 }}>
+          It takes just 2 minutes to set up. No catch.
+        </p>
+
+        <a href={WA_LINK} target="_blank" rel="noopener" onClick={() => { analytics.track("wa_click", { loc: "exit_popup" }); onClose(); }} className="wa" style={{
+          display: "inline-flex", alignItems: "center", gap: 10,
+          background: C.wa, color: "#fff", padding: "16px 32px",
+          borderRadius: 14, fontWeight: 800, fontSize: 16, textDecoration: "none",
+          boxShadow: `0 4px 24px ${C.wa}30`,
+        }}>
+          <img src="whatsapp.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} /> Message Us on WhatsApp
+        </a>
+
+        <p onClick={onClose} style={{
+          fontSize: 12, color: C.textMuted, marginTop: 16, cursor: "pointer",
+          textDecoration: "underline", textUnderlineOffset: 3,
+        }}>
+          No thanks, I'll pass
+        </p>
+      </div>
+    </div>
+  );
+};
+
+function DirectOutreach() {
+  const [openFaq, setOpenFaq] = useState(null);
+  const [exitPopup, setExitPopup] = useState(false);
+  const exitShown = React.useRef(false);
+
+  useEffect(() => { analytics.init(); }, []);
+
+  // Exit-intent: fires when mouse leaves the viewport (toward top)
+  useEffect(() => {
+    const handleExit = (e) => {
+      if (e.clientY <= 0 && !exitShown.current) {
+        exitShown.current = true;
+        setExitPopup(true);
+        analytics.track("exit_intent_shown");
+      }
+    };
+    document.addEventListener("mouseleave", handleExit);
+    return () => document.removeEventListener("mouseleave", handleExit);
+  }, []);
+
+  return (
+    <div style={{ background: C.bg, color: C.text, minHeight: "100vh", fontFamily: "'Merriweather', serif" }}>
+      <ExitPopup show={exitPopup} onClose={() => setExitPopup(false)} />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        ::selection { background: ${C.accent}40; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.6 } }
+        @keyframes glow { 0%,100% { box-shadow: 0 0 20px #25D36620 } 50% { box-shadow: 0 0 40px #25D36640 } }
+        .fu { animation: fadeUp .7s ease-out forwards }
+        .fu1 { animation: fadeUp .7s ease-out .1s forwards; opacity:0 }
+        .fu2 { animation: fadeUp .7s ease-out .2s forwards; opacity:0 }
+        .fu3 { animation: fadeUp .7s ease-out .3s forwards; opacity:0 }
+        .wa { transition:all .3s; cursor:pointer }
+        .wa:hover { transform:translateY(-2px); box-shadow:0 8px 40px #25D36650 !important }
+        .feature-card { transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; cursor: default; }
+        .feature-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 24px rgba(0,229,176,0.08) !important; border-color: #1A274480 !important; }
+        *::-webkit-scrollbar { width:4px }
+        *::-webkit-scrollbar-track { background:transparent }
+        *::-webkit-scrollbar-thumb { background:${C.border}; border-radius:4px }
+
+        /* Tablet */
+        @media (max-width: 768px) {
+          .hero-grid { grid-template-columns: 1fr !important; text-align: center; }
+          .hero-grid h1 { font-size: 32px !important; }
+          .hero-grid p { margin-left: auto; margin-right: auto; }
+          .hero-grid .wa { margin-left: auto; margin-right: auto; }
+          .feature-grid { grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
+          .steps-row { flex-direction: column !important; gap: 14px !important; }
+          .steps-row > div { flex: none !important; width: 100% !important; }
+          .nav-inner { padding: 0 16px !important; }
+          .nav-wa-text { display: none; }
+          .nav-wa-btn { padding: 8px 12px !important; }
+          .final-cta { padding: 32px 20px !important; }
+          .final-cta h2 { font-size: 22px !important; }
+          .faq-section { max-width: 100% !important; }
+        }
+
+        /* Mobile */
+        @media (max-width: 480px) {
+          .hero-grid { gap: 24px !important; padding: 0 16px !important; }
+          .hero-grid h1 { font-size: 26px !important; letter-spacing: -0.5px !important; }
+          .hero-grid p { font-size: 14px !important; }
+          .feature-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .feature-grid > div { min-height: auto !important; padding: 24px 20px !important; }
+          .steps-row > div { min-height: auto !important; padding: 24px 20px !important; }
+          .hero-badge { font-size: 9px !important; }
+          .hero-wa-btn { padding: 14px 24px !important; font-size: 14px !important; }
+          .section-heading { font-size: 22px !important; }
+          .final-cta-wrap { max-width: 100% !important; }
+          .final-cta { padding: 28px 16px !important; border-radius: 16px !important; }
+          .final-cta h2 { font-size: 20px !important; }
+          .final-cta .wa { padding: 14px 24px !important; font-size: 14px !important; }
+          .faq-item { padding: 14px 16px !important; }
+          .faq-item span:first-child { font-size: 14px !important; }
+          .sticky-wa { font-size: 12px !important; padding: 10px !important; }
+        }
+      `}</style>
+
+      <StickyWA />
+
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: `${C.bg}E8`, backdropFilter: "blur(20px)",
+        borderBottom: `1px solid ${C.border}`,
+      }}>
+        <div className="nav-inner" style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", display: "flex", justifyContent: "space-between", alignItems: "center", height: 56 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="marketscore logo.png" alt="MarketScore" style={{ width: 44, height: 44, borderRadius: 7, objectFit: "contain" }} />
+            <span style={{ fontWeight: 800, fontSize: 16 }}>MarketScore</span>
+          </div>
+          <a href={WA_LINK} target="_blank" rel="noopener" onClick={() => analytics.track("wa_click", { loc: "nav" })} className="wa nav-wa-btn" style={{
+            background: C.wa, color: "#fff", padding: "8px 20px",
+            borderRadius: 8, fontWeight: 700, fontSize: 13, textDecoration: "none",
+            display: "flex", alignItems: "center", gap: 8,
+          }}><img src="whatsapp.png" alt="WhatsApp" style={{ width: 18, height: 18, objectFit: "contain" }} /> <span className="nav-wa-text">Message MarketScore</span></a>
+        </div>
+      </nav>
+
+      <section style={{ paddingTop: 96, paddingBottom: 40, position: "relative", overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", top: "-20%", right: "-10%", width: 500, height: 500,
+          borderRadius: "50%", background: `radial-gradient(circle, ${C.wa}06 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }} />
+        <div className="hero-grid" style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center" }}>
+          <div>
+            <div className="fu hero-badge" style={{
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px",
+              borderRadius: 100, background: `${C.wa}12`, border: `1px solid ${C.wa}25`, marginBottom: 20,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: 3, background: C.wa, animation: "pulse 1.5s infinite" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.wa, fontFamily: "'IBM Plex Mono', monospace" }}>
+                Built for traders like you — by traders
+              </span>
+            </div>
+
+            <h1 className="fu1" style={{ fontSize: 42, fontWeight: 900, lineHeight: 1.08, letterSpacing: -1.5 }}>
+              This is going to
+              <br />
+              <span style={{
+                background: `linear-gradient(135deg, ${C.accent}, ${C.blue})`,
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              }}>change how you trade.</span>
+            </h1>
+
+            <p className="fu2" style={{ fontSize: 16, color: C.textSec, marginTop: 16, lineHeight: 1.7, maxWidth: 420 }}>
+              MarketScore gives you AI trade ideas 24/7. A scorecard that scores every instrument
+              across 4 factors. Expert setups. Private community. Forex, Crypto, Indices, Commodities.
+              It's free — just message us to get started.
+            </p>
+
+            <a href={WA_LINK} target="_blank" rel="noopener" onClick={() => analytics.track("wa_click", { loc: "hero" })} className="fu3 wa hero-wa-btn" style={{
+              display: "inline-flex", alignItems: "center", gap: 10, marginTop: 28,
+              background: C.wa, color: "#fff", padding: "16px 32px",
+              borderRadius: 14, fontWeight: 800, fontSize: 16, textDecoration: "none",
+              boxShadow: `0 4px 24px ${C.wa}30`, animation: "glow 3s ease-in-out infinite",
+            }}>
+              <img src="whatsapp.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} /> Message Us on WhatsApp
+            </a>
+
+            <p className="fu3" style={{ fontSize: 12, color: C.textMuted, marginTop: 12 }}>
+              We'll personally walk you through setup. Takes 2 minutes.
+            </p>
+          </div>
+
+          <div className="fu3">
+            <LiveScorecard />
+            <div style={{ textAlign: "center", marginTop: 10 }}>
+              <span style={{ fontSize: 10, color: C.accent, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace" }}>
+                {"\u2191"} Try it — tap any instrument {"\u2191"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 0" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+          <h2 className="section-heading" style={{ textAlign: "center", fontSize: 28, fontWeight: 900, marginBottom: 8, letterSpacing: -0.5 }}>
+            Here's what you get
+          </h2>
+          <p style={{ textAlign: "center", fontSize: 13, color: C.textSec, marginBottom: 32 }}>
+            All of this is free. No catch.
+          </p>
+          <div className="feature-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            {[
+              { icon: "ai-robot.png", title: "AI Trade Ideas \u2014 24/7", desc: "AI scans every market around the clock and generates setups. Entry, TP, SL. You wake up to fresh ideas. Even when no one is posting.", color: C.accent },
+              { icon: "target.png", title: "4-Factor Scorecard", desc: "Technical, Fundamental, Sentiment, and COT data. You just tried it above. Every instrument, scored daily. Know the bias before you trade.", color: C.blue },
+              { icon: "lightbulb.png", title: "Expert Trade Ideas", desc: "Vetted providers share structured setups \u2014 entry, TP, SL, scorecard score, and the reasoning behind it. Not screenshots. Real trade ideas.", color: C.gold },
+              { icon: "deal.png", title: "Private Community", desc: "Chat with providers and other traders in real-time. Ask questions. Discuss live trades. No lurkers. No noise. Just traders.", color: C.purple },
+            ].map((f, i) => (
+              <div key={i} className="feature-card" style={{
+                background: C.surface, borderRadius: 18, padding: "32px 28px",
+                border: `1px solid ${C.border}`, minHeight: 200,
+              }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 14, marginBottom: 16,
+                  background: "#fff", border: `1px solid ${f.color}20`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <img src={f.icon} alt={f.title} style={{ width: 32, height: 32, objectFit: "contain" }} />
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: f.color, marginBottom: 10 }}>{f.title}</h3>
+                <p style={{ fontSize: 13, color: C.textSec, lineHeight: 1.8 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 0" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+          <h2 className="section-heading" style={{ textAlign: "center", fontSize: 24, fontWeight: 900, marginBottom: 28 }}>How to get started</h2>
+          <div className="steps-row" style={{ display: "flex", gap: 20 }}>
+            {[
+              { n: "1", title: "Message Us", desc: "Tap the WhatsApp button. We'll send you the app link and walk you through everything.", icon: "email.png", color: C.wa },
+              { n: "2", title: "Connect Broker", desc: "PU Prime, MH Markets, or Star Trader. Already have one? We'll help you transfer your IB in 2 min.", icon: "link.png", color: C.blue },
+              { n: "3", title: "You're In", desc: "AI trade ideas, scorecard, community, everything \u2014 live instantly.", icon: "check.png", color: C.accent },
+            ].map((s, i) => (
+              <div key={i} className="feature-card" style={{
+                flex: 1, background: C.surface, borderRadius: 18, padding: "28px 24px",
+                border: `1px solid ${C.border}`, textAlign: "center", minHeight: 220,
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 20, margin: "0 auto 14px",
+                  background: `${s.color}15`, border: `1px solid ${s.color}30`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, fontWeight: 900, color: s.color, fontFamily: "'IBM Plex Mono', monospace",
+                }}>{s.n}</div>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 14, margin: "0 auto 14px",
+                  background: "#fff", border: `1px solid ${s.color}20`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <img src={s.icon} alt={s.title} style={{ width: 32, height: 32, objectFit: "contain" }} />
+                </div>
+                <h4 style={{ fontSize: 16, fontWeight: 800, marginTop: 8 }}>{s.title}</h4>
+                <p style={{ fontSize: 13, color: C.textSec, marginTop: 8, lineHeight: 1.7 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 0" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+          <h2 className="section-heading" style={{ textAlign: "center", fontSize: 28, fontWeight: 900, marginBottom: 32 }}>Quick questions</h2>
+          {[
+            { q: "Is this actually free?", a: "Yes. Everything \u2014 trade ideas, scorecard, community, AI ideas. 100% free. There's a paid tier for power users who want more AI credits ($5/mo), but the free version is the full app." },
+            { q: "What's the catch?", a: "No catch. You connect through a partner broker (PU Prime, MH Markets, or Star Trader) and MarketScore earns a small rebate from the broker on your trading volume. You pay the same spreads as everyone else. That's how it's free for you." },
+            { q: "Do I need to switch brokers?", a: "If you're already with PU Prime, MH Markets, or Star Trader \u2014 just transfer your IB to us. Takes 2 minutes, we'll walk you through it. If you're with someone else, open a free account with any of the 3." },
+            { q: "Is my money safe?", a: "MarketScore never touches your funds. We can't access your account or execute trades for you. Your money stays in your broker account." },
+          ].map((f, i) => (
+            <div key={i} className="faq-item" onClick={() => { setOpenFaq(openFaq === i ? null : i); analytics.track("faq", { q: f.q }); }} style={{
+              background: C.surface, borderRadius: 14, padding: "18px 24px",
+              border: `1px solid ${openFaq === i ? C.accent + "30" : C.border}`,
+              marginBottom: 10, cursor: "pointer",
+              transition: "border-color .3s, box-shadow .3s",
+              boxShadow: openFaq === i ? `0 4px 20px rgba(0,229,176,0.06)` : "none",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>{f.q}</span>
+                <span style={{ fontSize: 20, color: C.accent, transition: "transform .3s", transform: openFaq === i ? "rotate(45deg)" : "rotate(0)" }}>+</span>
+              </div>
+              {openFaq === i && (
+                <p style={{ fontSize: 14, color: C.textSec, lineHeight: 1.8, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>{f.a}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: "60px 0 100px" }}>
+        <div className="final-cta-wrap" style={{ maxWidth: 520, margin: "0 auto", padding: "0 24px" }}>
+          <div className="final-cta" style={{
+            borderRadius: 24, padding: "44px 32px", textAlign: "center",
+            background: `linear-gradient(135deg, ${C.surface}, ${C.card})`,
+            border: `1px solid ${C.wa}20`, position: "relative", overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+              width: 400, height: 400, borderRadius: "50%",
+              background: `radial-gradient(circle, ${C.wa}06 0%, transparent 60%)`,
+              pointerEvents: "none",
+            }} />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, lineHeight: 1.15 }}>
+                Try it. If you don't like it,
+                <br /><span style={{ color: C.accent }}>you've lost nothing.</span>
+              </h2>
+              <p style={{ fontSize: 13, color: C.textSec, marginTop: 12, maxWidth: 360, margin: "12px auto 0" }}>
+                Message us. We'll set you up personally. 2 minutes and you'll see why
+                traders are switching to MarketScore.
+              </p>
+              <a href={WA_LINK} target="_blank" rel="noopener" onClick={() => analytics.track("wa_click", { loc: "final" })} className="wa" style={{
+                display: "inline-flex", alignItems: "center", gap: 10, marginTop: 24,
+                background: C.wa, color: "#fff", padding: "16px 36px",
+                borderRadius: 14, fontWeight: 800, fontSize: 16, textDecoration: "none",
+                boxShadow: `0 4px 24px ${C.wa}30`, animation: "glow 3s ease-in-out infinite",
+              }}>
+                <img src="whatsapp.png" alt="WhatsApp" style={{ width: 22, height: 22, objectFit: "contain" }} /> Message MarketScore on WhatsApp
+              </a>
+              <div style={{ marginTop: 14, display: "flex", justifyContent: "center", gap: 14 }}>
+                {["100% free", "Personal setup", "2 minutes"].map((t, i) => (
+                  <span key={i} style={{ fontSize: 10, color: C.textMuted }}>{"\u2713"} {t}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "16px 0" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
+          <p style={{ fontSize: 9, color: C.textMuted, lineHeight: 1.5 }}>
+            MarketScore &copy; 2026. Trade ideas are educational, not investment advice. Trading involves risk.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<DirectOutreach />);
+  </script>
+</body>
+</html>
